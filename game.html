@@ -483,14 +483,14 @@
         function scheduleNextBubbleThrow() {
           if (isSurveilling || checkGameWin()) return;
 
-          const delay = Math.random() * 1200 + 1000;
+          const delay = Math.random() * 500 + 1000;
 
           setTimeout(() => {
-            const bubbleCount = Math.floor(Math.random() * 2) + 2;
+            const bubbleCount = Math.floor(Math.random() * 2) + 1;
             for (let i = 0; i < bubbleCount; i++) {
               setTimeout(() => {
                 createFlyingBubble(true);
-              }, i * 300);
+              }, i * 700);
             }
             scheduleNextBubbleThrow();
           }, delay);
@@ -660,14 +660,21 @@
                 player.style.left = playerX + '%';
             }
         });
-        
+
+        /* ✅ 해피엔딩 이동 조건 추가 */
         function checkGameWin() {
             if (currentPretzelCount >= WIN_GOAL) {
-                console.log("🎉 프레첼 30개 달성! 게임 승리 화면으로 이동 준비.");
+                console.log("🎉 프레첼 30개 달성! 해피엔딩으로 이동!");
                 clearInterval(timerInterval);
                 clearTimeout(surveillanceTimerId);
                 clearTimeout(bubbleTimerId);
-                player.removeEventListener('click', playerClickHandler); 
+                player.removeEventListener('click', playerClickHandler);
+
+                // ✅ 해피엔딩 페이지로 이동
+                setTimeout(() => {
+                    window.location.href = "happyending.html";
+                }, 800);
+
                 return true;
             }
             return false;
