@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>게임 오버 - 공포 연출</title>
+<style>
+  /* 공통 */
+  html, body { margin:0; height:100%; overflow:hidden; font-family:'Do Hyeon', sans-serif; background:#000; }
+
+  /* ===== 레이어 스택 =====
+     z-index: 1  -> #color-layer (배경 색)
+     z-index: 2  -> #image-layer (배경 이미지)
+     z-index: 3  -> #middle-professor-img
+     z-index: 4  -> #professor-img (교수님)
+     z-index: 6  -> #black-layer (깜박이는 검은 배경)
+     z-index: 7  -> #fear-img
+     z-index: 10 -> #player-img (플레이어)
+     z-index: 100 -> #gameover-overlay
+     z-index: 101 -> #retry-button
+  */
+  .stage {
+    position: fixed; inset:0; width:100%; height:100%; pointer-events:none;
+  }
+
+  /* 1) 배경 컬러 (맨 아래) */
+  #color-layer {
+    z-index:1;
+    background: rgba(189,0,198,1);
+  }
+
+  /* 2) 배경 이미지 */
+  #image-layer {
+    z-index:2;
+    background-image: url('Frame 2087326995.png');
+    background-size: cover;
+    background-position: center bottom;
+    transition: filter .4s ease, opacity .4s ease, mix-blend-mode .4s ease;
+  }
+  #image-layer.overlayed {
+    mix-blend-mode: overlay;
+    opacity: .95;
+  }
+
+  /* 3) 교수님 아래 레이어 */
+  #middle-professor-img {
+    position: absolute;
+    width: 60%;
+    height: 59%;
+    left: 370px;
+    top: 4px;
+    background-image: url('Mask group.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center bottom;
+    z-index: 3;
+    opacity: 0;
+    animation: middleFadeIn 1.5s ease forwards;
+    animation-delay: 0.5s;
+  }
+  @keyframes middleFadeIn {
+    from { opacity: 0; transform: scale(1); }
+    to   { opacity: 1; transform: scale(1.02); }
+  }
+
+  /* 4) 교수님 */
+  #professor-img {
+    position: absolute; width:60%; height:60%;
+    left:370px; top:0;
+    background-image: url('image 110497.png');
+    background-repeat:no-repeat; background-size:contain; background-position: center bottom;
+    z-index:4; pointer-events:auto; cursor:pointer;
+    opacity:0; transform: translateY(-80px) scale(.95);
+    animation: professorEnter 800ms ease-out forwards 200ms;
+    transition: transform .25s ease;
+  }
+  #professor-img:hover {
+    mix-blend-mode:difference;
+    transform: scale(1.05);
+  }
+
+  /* 5) 공포 확대 이미지 */
+  #fear-img {
+    background-image: url('elsdkgjflkd.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 7;
+    transform: scale(0.5);
+    opacity: 0;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  /* 6) 깜박이는 검은 레이어 */
+  #black-layer {
+    z-index:8;
+    background:#000;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 120ms ease;
+  }
+  #black-layer.visible { opacity:1; }
+
+  /* 7) 플레이어 */
+  #player-img {
+    position:absolute; width:400px; height:480px;
+    left:37%; bottom:40px;
+    background-image: url('back student.png');
+    background-repeat:no-repeat; background-size:contain;
+    z-index:10; pointer-events:none;
+    opacity:0; transform: translateY(60px);
+    animation: playerEnter 800ms ease-out forwards 350ms;
+    transition: filter .4s ease, opacity .4s ease, mix-blend-mode .4s ease;
+  }
+  #player-img.overlayed {
+    mix-blend-mode: difference;
+    opacity:.98;
+  }
+
+  /* 8) 게임오버 오버레이 */
+  #gameover-overlay {
+    position: fixed;
+    inset: 0;
+    width: 1400px;      /* ✅ 직접 너비 지정 (예: 600px) */
+    height: 800px;
+    background-image: url('Group 2085666283.png');
+    transform: translate(12%, 0%);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none
+  }
+  #gameover-overlay.visible {
+    opacity: 1;
+  }
+
+  /* 9) 다시하기 버튼 */
+  #retry-button {
+    position: fixed;
+    bottom: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 250px;
+    height: 110px;
+    background-image: url('Group 2085666280.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 101;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.8s ease, transform 0.3s ease, background-image 0.3s ease;
+  }
+  #retry-button.visible {
+    opacity: 1;
+  }
+  #retry-button:hover {
+    background-image: url('1234235.png');
+    transform: translateX(-50%) scale(1.05);
+  }
+
+  /* 등장 애니메이션 */
+  @keyframes professorEnter {
+    to { opacity:1; transform: translateY(0) scale(1); }
+  }
+  @keyframes playerEnter {
+    to { opacity:1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+  <div id="color-layer"  class="stage"></div>
+  <div id="image-layer"  class="stage"></div>
+  <div id="middle-professor-img"></div>
+  <div id="professor-img"></div>
+  <div id="black-layer"  class="stage"></div>
+  <div id="fear-img" class="stage"></div>
+  <div id="player-img"></div>
+
+  <div id="gameover-overlay"></div>
+  <div id="retry-button"></div>
+
+  <audio id="sfx1" preload="auto" src="heavy-walking-footsteps-352771.mp3"></audio>
+  <audio id="sfx2" preload="auto" src="scary-static-noise-76155.mp3"></audio>
+
+<script>
+  const professor   = document.getElementById('professor-img');
+  const imageLayer  = document.getElementById('image-layer');
+  const playerImg   = document.getElementById('player-img');
+  const blackLayer  = document.getElementById('black-layer');
+  const fearImg     = document.getElementById('fear-img');
+  const gameOverOverlay = document.getElementById('gameover-overlay');
+  const retryButton  = document.getElementById('retry-button');
+
+  const sfx1 = document.getElementById('sfx1');
+  const sfx2 = document.getElementById('sfx2');
+
+  let clicked = false;
+  let scaleLevel = 1;
+
+  professor.addEventListener('click', () => {
+    if (clicked) return;
+    clicked = true;
+
+    imageLayer.classList.add('overlayed');
+    playerImg.classList.add('overlayed');
+
+    try {
+      sfx1.currentTime = 0;
+      sfx1.volume = 1.0;
+      sfx1.play();
+    } catch(e){}
+
+    // 🔹 두 번째 효과음은 조금 늦게 재생
+    setTimeout(() => {
+      try {
+        sfx2.currentTime = 0;
+        sfx2.volume = 1.0;
+        sfx2.play();
+      } catch(e){}
+    }, 2500);
+
+    startFlickerSequence();
+  });
+
+  // 🔹 깜박임 + 공포 이미지 확대 루프
+  function startFlickerSequence() {
+    const totalBursts = 7;
+    let i = 0;
+
+    (function burst() {
+      if (i >= totalBursts) {
+        blackLayer.classList.remove('visible');
+        showGameOver();
+        return;
+      }
+
+      const period = Math.max(160, 900 - i * 120);
+      const onTime = Math.max(80, 350 - i * 35);
+
+      blackLayer.classList.add('visible');
+      scaleLevel += 0.25;
+      fearImg.style.opacity = "1";
+      fearImg.style.transform = `scale(${scaleLevel})`;
+
+      setTimeout(() => {
+        blackLayer.classList.remove('visible');
+        i++;
+        setTimeout(burst, Math.max(40, period - onTime));
+      }, onTime);
+    })();
+  }
+
+  // 🔹 게임 오버 & 다시하기 버튼 표시
+  function showGameOver() {
+    if (gameOverOverlay) gameOverOverlay.classList.add('visible');
+
+    // 버튼 표시 약간 딜레이
+    setTimeout(() => {
+      if (retryButton) retryButton.classList.add('visible');
+    }, 1200);
+
+    // 클릭 시 index.html로 이동
+    if (retryButton) {
+      retryButton.addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+    }
+  }
+</script>
+</body>
+</html>

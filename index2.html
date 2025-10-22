@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교수님 몰래 프레첼 먹기 게임</title>
+    
+    <style>
+        /* ------------------------------------- */
+        /* A. 전체 초기 설정 및 배경 이미지 설정 */
+        /* ------------------------------------- */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+
+        #main-screen, #game-screen, #help-overlay, .end-screen { 
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0; 
+            background-size: cover; background-position: center; 
+        }
+        #game-screen, #help-overlay, .end-screen { display: none; }
+        .end-screen { z-index: 500; display: flex; justify-content: center; align-items: center; flex-direction: column; background-color: rgba(0, 0, 0, 0.8); }
+        .end-screen h1 { color: white; font-size: 48px; }
+
+        /* B. 홈 화면 스타일 */
+        #main-screen { background-image: url('Frame 2087326991.png'); z-index: 400; }
+        
+        /* 1. 홈 화면 인물 및 말풍선 스타일 */
+        #main-character-img { 
+            width: 850px; height: 950px; position: absolute; 
+            bottom: -100%; left: 100px; 
+            transform: translate(0, 0); 
+            background-image: url('image 110492.png'); background-size: contain;
+            transition: bottom 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+            z-index: 405;
+        }
+        #main-character-bubble { 
+            width: 250px; height: 180px; position: absolute; 
+            top: 20%; left: 10%; background-image: url('hey.png'); 
+            background-size: contain; opacity: 0; transition: opacity 0.3s; z-index: 406;
+        }
+
+        /* 2. 버튼 공통 및 개별 위치 */
+        button {
+            background: none; border: none; cursor: pointer; padding: 0; position: absolute;
+            top: auto; left: auto; z-index: 410;
+        }
+        button img { display: block; width: 100%; height: auto; }
+        #button-1 { width: 250px; bottom: 100px; right: 520px; } 
+        #button-2 { width: 250px; bottom: 100px; right: 220px; } 
+        #button-3 { width: 100px; top: 40px; right: 40px; }
+
+        /* C. 게임 시작 화면 요소 */
+        #game-screen { background-image: url('Frame 2087326990.png'); z-index: 300; }
+
+        /* 1. 교수님 전신 및 얼굴/눈알 */
+        #professor { 
+            width: 480px; height: 480px; position: absolute; top: 150px; left: 50%; 
+            background-image: url('교수님_이미지.png'); background-size: contain; z-index: 305; 
+            transform: translateX(-50%);
+        }
+        #professor-face { /* 🚨 얼굴 확대용 바탕 🚨 */
+            width: 205px; height: 205px; position: absolute; top: 142px; left: 46.2%; 
+            background-image: url('profe face.png'); /* 🚨 눈 부분이 투명한 이미지 🚨 */
+            background-size: contain; z-index: 307; opacity: 0; 
+            transform: translateX(-50%) scale(1.0); 
+            transition: transform 0.3s ease-out, left 0.3s ease-out, opacity 0.3s ease-out;
+            position: relative; /* 눈알 배치를 위한 기준점 */
+        }
+        #professor-eye { /* 🚨 눈알 (얼굴 뒤에 위치) 🚨 */
+            width: 50px; height: 50px; position: absolute; top: 60px; left: 50%; 
+            background-image: url('Group 2085666296.png'); 
+            background-size: contain; z-index: 306; opacity: 0; 
+            transform: translateX(-50%) scale(1.0);
+            transition: transform 0.3s ease-in-out, left 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+        
+        /* 2. 플레이어 */
+        #player { 
+            width: 320px; height: 480px; position: absolute; bottom: -50px; left: 50%; 
+            background-image: url('back student.png'); background-size: contain; z-index: 309; 
+            transform: translateX(-50%); transition: left 0.1s linear; 
+        }
+
+        /* 3. 상태 창 및 경고 */
+        .status-bar { position: absolute; z-index: 312; background-size: contain; background-repeat: no-repeat; }
+        #status-timer { top: 30px; left: 30px; width: 600px; height: 140px; background-image: url('Group 2085666292.png'); position: relative; overflow: hidden; padding: 0; }
+        #timer-bar { width: 100%; height: 100%; background-color: #FF00BB; transition: width 0.1s linear; }
+
+        #status-score { top: 30px; right: 30px; width: 200px; height: 70px; background-image: url('프레첼_획득_창.png'); z-index: 313; display: flex; justify-content: center; align-items: center; color: white; font-size: 24px; }
+        #score-display { color: white; }
+
+        /* 경고창 (경고 카드 3개) */
+        #status-alert { bottom: 30px; right: 30px; width: 500px; height: 180px; background-image: url('Group 2085666291.png'); display: flex; align-items: flex-end; justify-content: flex-start; padding: 10px; }
+        #alert-wrapper { display: flex; align-items: flex-end; }
+        .alert-item { width: 120px; height: 120px; background-image: url('warning_card.png'); background-size: contain; opacity: 0; transition: opacity 0.3s; margin-right: 10px; }
+        
+        /* 🚨 말풍선 공격 요소 (2-5) 🚨 */
+        #attack-bubble {
+            position: absolute; width: 150px; height: 150px; 
+            background-image: url('말풍선_공격.png'); background-size: contain;
+            opacity: 0; transform: translateY(0); transition: opacity 0.1s, transform 0.5s linear; 
+            z-index: 311;
+        }
+
+        /* E. 게임 방법 오버레이 스타일 */
+        #help-overlay { display: flex; justify-content: center; align-items: center; z-index: 600; background-color: rgba(0, 0, 0, 0.9); }
+        #help-image-container { width: 80%; height: 80%; background-size: contain; background-repeat: no-repeat; background-position: center; position: relative; }
+        .help-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 80px; height: 80px; }
+        #help-next-button { right: 5%; }
+        #help-prev-button { left: 5%; display: none; }
+        #help-back-button { position: absolute; top: 20px; left: 20px; width: 100px; z-index: 601; }
+
+    </style>
+</head>
+<body>
+    
+    <div id="game-screen">
+        
+        <div id="status-timer" class="status-bar">
+            <div id="timer-bar"></div>
+        </div>
+        <div id="status-score" class="status-bar">
+            <div id="score-display">0 / 30</div>
+        </div>
+        
+        <div id="status-alert" class="status-bar">
+            <div id="alert-wrapper">
+                <div id="alert-1" class="alert-item"></div>
+                <div id="alert-2" class="alert-item"></div>
+                <div id="alert-3" class="alert-item"></div>
+            </div>
+        </div>
+        
+        <div id="professor"></div>
+        <div id="professor-face">
+            <div id="professor-eye"></div>
+        </div>
+
+        <div id="player"></div>
+        
+        <div id="attack-bubble"></div>
+    </div>
+    
+    <div id="gameover-screen" class="end-screen">
+        <h1>GAME OVER</h1>
+        <p id="gameover-reason">시간 초과</p>
+        <button id="gameover-retry">다시 하기</button>
+    </div>
+
+    <div id="clear-screen" class="end-screen">
+        <h1>GAME CLEAR!</h1>
+        <button id="clear-retry">다시 하기</button>
+    </div>
+
+    <div id="main-screen">
+        
+        <div id="main-character-img"></div> 
+        <div id="main-character-bubble"></div>
+        
+        <button id="start-button">
+            <img src="Group 2085666287.png" alt="게임 시작" data-normal="Group 2085666287.png" data-hover="Group 2085666238.png">
+        </button>
+        <button id="help-button">
+            <img src="Group 2085666288.png" alt="게임 방법" data-normal="Group 2085666288.png" data-hover="Group 2085666241.png">
+        </button>
+        <button id="bgm-button">
+            <img src="Group 2085666266.png" alt="BGM 켜기/끄기" id="bgm-icon" data-normal="Group 2085666265.png" data-off="Group 2085666266.png">
+        </button>
+    </div>
+    
+    <div id="help-overlay">
+        <div id="help-image-container">
+        </div>
+        <button id="help-next-button" class="help-nav-btn">
+            <img src="next_normal.png" data-normal="next_normal.png" data-hover="next_hover.png">
+        </button>
+        <button id="help-prev-button" class="help-nav-btn">
+            <img src="prev_normal.png" data-normal="prev_normal.png" data-hover="prev_hover.png">
+        </button>
+        <button id="help-back-button">
+            <img src="back_normal.png" data-normal="back_normal.png" data-hover="back_hover.png">
+        </button>
+    </div>
+
+    <audio id="game-bgm" src="[diINnQEGrY4].mp3" loop></audio>
+    <audio id="eat-sound" src="eat_sound.mp3"></audio>
+
+    <script>
+        // 🚨 JavaScript 코드 전문 🚨
+
+        let helpPageIndex = 1; 
+        let isBgmPlaying = false;
+        
+        // 게임 변수 (2번 파일용)
+        let gameScreen, player, professorFace, professorEye;
+        let scoreDisplay;
+        let playerX = 0;
+        const MOVE_SPEED = 15; 
+        let snackCount = 0; 
+        const PRESSES_PER_STAGE = 10; 
+        const TOTAL_SNACKS = 3; 
+        const MAX_PRESSES = 30; 
+        let alertCount = 0; 
+        const MAX_ALERT = 3; 
+        let isGameOver = false;
+        let isGlobalAlert = false; 
+        let alertElements;
+        let eatSound;
+        
+        // 🚨 공격 말풍선 랜덤 위치/이동 속도 🚨
+        const ATTACK_BUBBLE_IMAGES = ['attack_bubble1.png', 'attack_bubble2.png'];
+        const BUBBLE_SPEED = 10;
+        
+        // 🚨 타이머 및 이벤트 인터벌 ID 🚨
+        let gameTimer, globalAlertInterval, attackInterval, eyeMovementInterval;
+
+
+        // --- 1. 유틸리티 및 상태 함수 ---
+
+        function setupHoverEffect(buttonElement) {
+            const imageElement = buttonElement.querySelector('img');
+            if (!imageElement) return;
+            imageElement.addEventListener('mouseover', () => { 
+                imageElement.src = imageElement.dataset.hover || imageElement.dataset.off || imageElement.dataset.normal; 
+            });
+            imageElement.addEventListener('mouseout', () => { imageElement.src = imageElement.dataset.normal; });
+        }
+
+        function setHelpPage(index) {
+            const totalPages = 3; 
+            if (index < 1 || index > totalPages) return;
+            
+            helpPageIndex = index;
+            const container = document.getElementById('help-image-container');
+            container.style.backgroundImage = `url('help_img_${index}.png')`; 
+            
+            document.getElementById('help-next-button').style.display = (index < totalPages) ? 'block' : 'none';
+            document.getElementById('help-prev-button').style.display = (index > 1) ? 'block' : 'none';
+        }
+
+        function triggerGameOver(reason) {
+            if (isGameOver) return;
+            isGameOver = true;
+            
+            // 모든 게임 루프 정지
+            clearInterval(gameTimer);
+            clearInterval(globalAlertInterval);
+            clearInterval(attackInterval);
+            clearInterval(eyeMovementInterval);
+
+            // BGM 정지
+            const gameBgm = document.getElementById('game-bgm');
+            gameBgm.pause();
+            
+            // 화면 전환
+            document.getElementById('gameover-screen').style.display = 'flex';
+            document.getElementById('gameover-reason').textContent = reason;
+            document.getElementById('game-screen').style.display = 'none';
+        }
+        
+        function triggerGameClear() {
+            if (isGameOver) return;
+            isGameOver = true;
+            
+            // 모든 게임 루프 정지
+            clearInterval(gameTimer);
+            clearInterval(globalAlertInterval);
+            clearInterval(attackInterval);
+            clearInterval(eyeMovementInterval);
+
+            // BGM 정지
+            const gameBgm = document.getElementById('game-bgm');
+            gameBgm.pause();
+            
+            // 화면 전환
+            document.getElementById('clear-screen').style.display = 'flex';
+            document.getElementById('game-screen').style.display = 'none';
+        }
+
+
+        // --- 2. 교수님 감시 모드 및 눈알 움직임 ---
+        
+        function startEyeMovement() {
+            if (isGameOver || !isGlobalAlert) return;
+            
+            let targetLeft = 0;
+            // 1. 좌우 방향을 랜덤하게 선택 (-1, 1)
+            const isWatchingLeft = Math.random() < 0.5;
+            
+            // 2. 타겟 위치 계산 (20px 좌우 이동)
+            targetLeft = isWatchingLeft ? -20 : 20;
+            
+            // 3. 눈알 위치 업데이트 (얼굴 확대와 좌우 이동 동시 적용)
+            professorEye.style.transform = `translateX(-50%) scale(2.0) translateX(${targetLeft}px)`;
+
+            // 🚨 4초 동안 눈알이 고정된 상태에서 대기 🚨
+            setTimeout(() => {
+                if (isGameOver) return;
+                
+                // 눈알 위치 복구 및 다음 움직임 준비 (0px로 이동)
+                professorEye.style.transform = `translateX(-50%) scale(2.0) translateX(0px)`;
+            }, 2000); // 2초 후 잠시 중앙으로 돌아옴
+        }
+
+        function startGlobalAlertCycle() {
+            if (isGameOver) return;
+            
+            const INITIAL_FACE_LEFT_PERCENT = 50; // CSS left: 50%를 사용 (교수님 전신 기준)
+            const MAX_SHIFT_PX = 10; 
+            
+            // 1. 전체 시야 모드 시작
+            isGlobalAlert = true;
+            
+            // 🚨 랜덤 좌우 떨림 위치 조정 (-5px ~ +5px) 🚨
+            const randomShift = (Math.random() * MAX_SHIFT_PX) - (MAX_SHIFT_PX / 2); 
+            
+            // 🚨 얼굴과 눈알 동시 확대 및 좌우 떨림 적용 🚨
+            professorFace.style.opacity = 1;
+            professorEye.style.opacity = 1;
+            professorFace.style.transform = `translateX(-50%) scale(2.0)`;
+            professorFace.style.left = `calc(${INITIAL_FACE_LEFT_PERCENT}% + ${randomShift}px)`;
+            professorEye.style.left = `calc(50% + ${randomShift}px)`; 
+            professorEye.style.transform = `translateX(-50%) scale(2.0)`;
+            
+            // 2. 눈알 좌우 움직임 시작
+            eyeMovementInterval = setInterval(startEyeMovement, 1000); 
+            
+            // 3. 4초 후 모드 종료 및 복구
+            setTimeout(() => {
+                if (isGameOver) return;
+                clearInterval(eyeMovementInterval); 
+                
+                isGlobalAlert = false;
+                professorFace.style.transform = `translateX(-50%) scale(1.0)`;
+                professorFace.style.left = `${INITIAL_FACE_LEFT_PERCENT}%`; 
+                professorFace.style.opacity = 0; 
+                
+                professorEye.style.transform = `translateX(-50%) scale(1.0)`; 
+                professorEye.style.left = `50%`; 
+                professorEye.style.opacity = 0; 
+
+                // 4. 다음 이벤트까지 랜덤 시간 대기 후 재호출 (5초 ~ 10초)
+                const nextDelay = 5000 + Math.random() * 5000; 
+                setTimeout(startGlobalAlertCycle, nextDelay);
+
+            }, 4000); // 4초 동안 유지
+        }
+
+        // --- 3. 말풍선 공격 및 충돌 로직 ---
+        function startAttackCycle() {
+            if (isGameOver) return;
+            
+            const attackBubble = document.getElementById('attack-bubble');
+            
+            // 1. 랜덤 이미지 및 위치 설정
+            const randomIndex = Math.floor(Math.random() * ATTACK_BUBBLE_IMAGES.length);
+            attackBubble.style.backgroundImage = `url('${ATTACK_BUBBLE_IMAGES[randomIndex]}')`;
+            
+            const playerRect = player.getBoundingClientRect();
+            const screenRect = gameScreen.getBoundingClientRect();
+            
+            // 공격 시작 위치 (화면 상단)
+            const startX = (playerRect.left + playerRect.width / 2) - screenRect.left + (Math.random() * 100) - 50; 
+            const startY = -50; 
+            
+            attackBubble.style.left = `${startX}px`;
+            attackBubble.style.top = `${startY}px`;
+            attackBubble.style.opacity = 1;
+
+            // 2. 하강 애니메이션
+            let currentY = startY;
+            const dropTimer = setInterval(() => {
+                if (isGameOver) { clearInterval(dropTimer); return; }
+                currentY += BUBBLE_SPEED;
+                attackBubble.style.top = `${currentY}px`;
+                
+                const bubbleRect = attackBubble.getBoundingClientRect();
+                
+                // 3. 🚨 플레이어와 충돌 (간단한 사각형 충돌) 🚨
+                const isColliding = (
+                    bubbleRect.left < playerRect.right &&
+                    bubbleRect.right > playerRect.left &&
+                    bubbleRect.top < playerRect.bottom &&
+                    bubbleRect.bottom > playerRect.top
+                );
+
+                if (isColliding) {
+                    clearInterval(dropTimer);
+                    attackBubble.style.opacity = 0;
+                    alertCount++;
+                    
+                    // 🚨 경고 이미지 쌓기 🚨
+                    if (alertCount <= MAX_ALERT) {
+                        alertElements[alertCount - 1].style.opacity = 1;
+                    }
+
+                    if (alertCount >= MAX_ALERT) {
+                        triggerGameOver("경고 3회 누적!");
+                    }
+                } else if (currentY > screenRect.bottom) {
+                    clearInterval(dropTimer); 
+                    attackBubble.style.opacity = 0;
+                }
+
+            }, 50);
+
+            // 다음 공격까지 랜덤 시간 대기 후 재호출 (2초 ~ 5초)
+            const nextAttackDelay = 2000 + Math.random() * 3000;
+            setTimeout(startAttackCycle, nextAttackDelay);
+        }
+
+        // --- 4. 학생 캐릭터 이동 및 섭취 로직 ---
+        function setupPlayerMovement() {
+            document.addEventListener('keydown', (event) => {
+                if (isGameOver) return;
+                let direction = 0;
+                const eatSound = document.getElementById('eat-sound');
+
+                // 🚨 룰: 전체 시야 모드에서 키를 누르면 즉시 게임 오버! 🚨
+                if (isGlobalAlert) {
+                     // 스페이스바를 누르거나, 좌우 방향키/A/D 키를 누를 경우
+                    if (event.key === ' ' || event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'a' || event.key === 'd') {
+                        triggerGameOver("교수님이 노려볼 때 움직이거나 먹으려 했습니다!");
+                        return;
+                    }
+                }
+
+                if (event.key === ' ') { 
+                    event.preventDefault(); 
+                    
+                    if (snackCount >= MAX_PRESSES) { triggerGameClear(); return; }
+                    
+                    snackCount++;
+                    eatSound.currentTime = 0; 
+                    eatSound.play().catch(e => console.log('소리 재생 실패')); // 섭취 소리 재생
+                    
+                    // 점수 및 투명도 로직
+                    const currentSnackIndex = Math.floor(snackCount / PRESSES_PER_STAGE); 
+                    const currentStage = snackCount % PRESSES_PER_STAGE; 
+                    const opacityValue = (currentStage + 1) / PRESSES_PER_STAGE;
+                    
+                    document.getElementById('score-display').textContent = `${snackCount} / 30`;
+
+                    if (currentSnackIndex < TOTAL_SNACKS) {
+                        // 현재 로직은 스낵 이미지 투명도 대신 점수 텍스트만 업데이트하도록 간소화됩니다.
+                    }
+                    if (snackCount === MAX_PRESSES) {
+                        triggerGameClear();
+                    }
+                    return; 
+                }
+                
+                // 좌우 이동 로직 
+                switch(event.key) {
+                    case 'ArrowLeft': case 'a': direction = -1; break;
+                    case 'ArrowRight': case 'd': direction = 1; break;
+                }
+
+                if (direction !== 0) { 
+                    let currentLeft = parseFloat(player.style.left) || (gameScreen.offsetWidth / 2 - player.offsetWidth / 2);
+                    currentLeft += MOVE_SPEED * direction;
+                    
+                    // 화면 경계 제한 (100px 마진)
+                    const playerWidth = player.offsetWidth;
+                    const screenWidth = gameScreen.offsetWidth;
+                    const minXLimit = 100;
+                    const maxXLimit = screenWidth - playerWidth - 100;
+
+                    if (currentLeft < minXLimit) { currentLeft = minXLimit; } 
+                    else if (currentLeft > maxXLimit) { currentLeft = maxXLimit; }
+
+                    player.style.left = `${currentLeft}px`;
+                    player.style.transform = `translateX(0)`; 
+                }
+            });
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainScreen = document.getElementById('main-screen');
+            const helpOverlay = document.getElementById('help-overlay');
+            const mainCharacter = document.getElementById('main-character-img');
+            const mainCharacterBubble = document.getElementById('main-character-bubble');
+            const gameBgm = document.getElementById('game-bgm');
+            const bgmButton = document.getElementById('bgm-button');
+            
+            const startBtn = document.getElementById('start-button');
+            const helpBtn = document.getElementById('help-button');
+            const nextBtn = document.getElementById('help-next-button');
+            const prevBtn = document.getElementById('help-prev-button');
+            const backBtn = document.getElementById('help-back-button');
+
+            // 🚨 게임 요소 할당 🚨
+            gameScreen = document.getElementById('game-screen');
+            player = document.getElementById('player');
+            professorFace = document.getElementById('professor-face');
+            professorEye = document.getElementById('professor-eye');
+            alertElements = [document.getElementById('alert-1'), document.getElementById('alert-2'), document.getElementById('alert-3')];
+            eatSound = document.getElementById('eat-sound');
+
+            // 1. 스프링 튀어오르는 효과 (바닥에 닿는 위치)
+            setTimeout(() => { mainCharacter.style.bottom = '0%'; }, 100); 
+            
+            // 2. 호버/BGM/화면 전환 이벤트 연결
+            setupHoverEffect(startBtn); setupHoverEffect(helpBtn); setupHoverEffect(bgmButton);
+            setupHoverEffect(nextBtn); setupHoverEffect(prevBtn); setupHoverEffect(backBtn);
+            mainCharacter.addEventListener('mouseover', () => { mainCharacterBubble.style.opacity = 1; });
+            mainCharacter.addEventListener('mouseout', () => { mainCharacterBubble.style.opacity = 0; });
+            
+            bgmButton.addEventListener('click', () => { 
+                const bgmIcon = document.getElementById('bgm-icon');
+                if (isBgmPlaying) { gameBgm.pause(); isBgmPlaying = false; bgmIcon.src = bgmIcon.dataset.off; } 
+                else { gameBgm.currentTime = 3; gameBgm.play().catch(e => console.log('BGM 재생 실패:', e)); isBgmPlaying = true; bgmIcon.src = bgmIcon.dataset.normal; }
+            });
+            
+            // 🚨 화면 전환 및 게임 시작 🚨
+            startBtn.addEventListener('click', () => {
+                mainScreen.style.display = 'none'; 
+                gameScreen.style.display = 'block'; 
+                
+                // BGM 재생 (시작 시)
+                if (!isBgmPlaying) { gameBgm.currentTime = 3; gameBgm.play().catch(e => console.log('BGM 재생 실패')); isBgmPlaying = true; }
+                
+                // 초기화
+                isGameOver = false; snackCount = 0; alertCount = 0;
+                alertElements.forEach(el => el.style.opacity = 0);
+                document.getElementById('score-display').textContent = '0 / 30';
+
+                // 루프 시작
+                setupPlayerMovement();
+                startGlobalAlertCycle();
+                startAttackCycle();
+            }); 
+            
+            // 도움말 페이지 로직
+            helpBtn.addEventListener('click', () => { mainScreen.style.display = 'none'; helpOverlay.style.display = 'flex'; setHelpPage(1); });
+            nextBtn.addEventListener('click', () => { setHelpPage(helpPageIndex + 1); });
+            prevBtn.addEventListener('click', () => { setHelpPage(helpPageIndex - 1); });
+            backBtn.addEventListener('click', () => { helpOverlay.style.display = 'none'; mainScreen.style.display = 'block'; });
+        });
+    </script>
+</body>
+</html>

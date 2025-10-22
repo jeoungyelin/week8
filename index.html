@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>홈 화면 (교수님 몰래 프레첼)</title>
+    
+    <style>
+        /* ------------------------------------- */
+        /* A. 전체 초기 설정 및 배경 이미지 설정 */
+        /* ------------------------------------- */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        }
+
+        #main-screen {
+            width: 100%; height: 100%;
+            background-image: url('Frame 2087326991.png'); /* 메인 배경 이미지 */
+            background-size: cover; background-position: center;
+            background-repeat: no-repeat; position: relative; z-index: 400;
+        }
+        
+        /* ------------------------------------- */
+        /* B. 홈 화면 인물 및 말풍선 스타일 */
+        /* ------------------------------------- */
+        #main-character-img { 
+            width: 940px; height: 1050px; position: absolute; 
+            
+            /* 🚨 버튼 위치를 방해하는 top 대신 bottom에서 시작 🚨 */
+            bottom: -100%; /* 화면 아래쪽으로 숨김 */
+            left: 26%; 
+            
+            transform: translate(-50%, 0); /* X축 중앙 정렬 유지 */
+            background-image: url('image 110492.png'); background-size: contain;
+            
+            /* 🚨 transition 속성 변경 🚨 */
+            transition: bottom 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+            z-index: 405;
+        }
+        
+        #main-character-bubble { 
+            width: 400px; height: 53px; position: absolute; 
+            top: 15%; left: 25%; background-image: url('hey.png'); 
+            background-size: contain; opacity: 0; transition: opacity 0.3s; z-index: 406;
+        }
+
+        /* ------------------------------------- */
+        /* C. 버튼 공통 및 개별 위치 */
+        /* ------------------------------------- */
+        button {
+            background: none; border: none; cursor: pointer; padding: 0; position: absolute;
+            top: auto; left: auto; /* 🚨 bottom/right가 작동하도록 top/left 해제 🚨 */
+            z-index: 410;
+        }
+
+        button img { display: block; width: 100%; height: auto; }
+
+        /* 🚨 버튼 개별 위치 및 크기: 이 값만 수정하면 됩니다! 🚨 */
+        #start-button { width: 250px; bottom: 140px; right: 640px; } 
+        #help-button { width: 250px; bottom: 140px; right: 340px; } 
+        #bgm-button { width: 100px; top: 40px; right: 40px; }
+
+        /* ------------------------------------- */
+        /* D. 게임 방법 오버레이 스타일 */
+        /* ------------------------------------- */
+        #help-overlay { 
+            display: none; width: 110%; height: 110%; position: absolute; top: -60px; left: 0; 
+            justify-content: center; align-items: center; z-index: 600;
+            background-image: url('Frame 2087326993.png');
+            background-size: cover;
+
+            background-position: center; 
+            background-repeat: no-repeat;
+        }
+
+        #help-box {
+            width: 140%; height: 140%; left: -90px;
+            background-image: url('Group 2085666300.png');
+            background-size: contain; background-repeat: no-repeat;
+            background-position: center; 
+            position: relative;
+            top: 0%; /* 초기 위치: 화면 밖 위쪽 */
+            transition: top 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+        }
+
+        #help-content {
+             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .help-page { 
+            position: absolute; 
+            width: 55%; height: 55%;
+            top: 2.5%; left: 23%;
+            background-size: contain; 
+            background-repeat: no-repeat; 
+            background-position: center;
+            
+            opacity: 0; /* 🚨 핵심: 초기 투명도 0 🚨 */
+            transition: opacity 0.5s ease-in-out; /* 페이드인 효과 */
+        }
+        
+        /* 각 페이지 이미지 정의 */
+        #help-img-1 { background-image: url('Group 2085666313.png'); }
+        #help-img-2 { background-image: url('Group 2085666321.png'); }
+        #help-img-3 { background-image: url('Group 2085666329.png'); }
+
+
+        /* 다음/이전 버튼 스타일 */
+        .help-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 150px; height: 150px; }
+        #help-next-button { position: absolute; top: -72px; right: 120px; width: 255px; z-index: 601; }
+        /* 🚨 이전 버튼 스타일 (좌측 위치 및 크기 조정) 🚨 */
+        #help-prev-button { 
+            top: -72px; right: 365px;
+            width: 255px;
+            display: none;
+        }
+        #help-back-button { position: absolute; top: -127px; left: 120px; width: 255px; z-index: 601; }
+    </style>
+</head>
+<body>
+
+    <div id="main-screen">
+        
+        <div id="main-character-img"></div>
+        <div id="main-character-bubble"></div>
+        
+        <button id="start-button">
+            <img src="Group 2085666287.png" alt="게임 시작" data-normal="Group 2085666287.png" data-hover="Group 2085666238.png">
+        </button>
+        <button id="help-button">
+            <img src="Group 2085666288.png" alt="게임 방법" data-normal="Group 2085666288.png" data-hover="Group 2085666241.png">
+        </button>
+        <button id="bgm-button">
+            <img src="Group 2085666266.png" alt="BGM 켜기/끄기" id="bgm-icon" data-normal="Group 2085666265.png" data-off="Group 2085666266.png">
+        </button>
+    </div>
+    
+    <div id="help-overlay">
+
+    <div id="help-box">
+        
+    <div id="help-content">
+        <div id="help-img-1" class="help-page"></div>
+        <div id="help-img-2" class="help-page"></div>
+        <div id="help-img-3" class="help-page"></div>
+    </div>
+    <button id="help-back-button"><img src="Group 2085666264.png" data-normal="Group 2085666264.png" data-hover="Group 2085666263.png"></button>
+    
+    <button id="help-next-button" class="help-nav-btn"><img src="Group 2085666297.png" data-normal="Group 2085666297.png" data-hover="Group 2085666298.png"></button>
+
+    <button id="help-prev-button" class="help-nav-btn"><img src="Group 2085666301.png" data-normal="Group 2085666301.png" data-hover="Group 2085666302.png"></button>
+    </div>
+</div>
+
+    <audio id="click-sound" src="click-345983.mp3"></audio>
+    <audio id="game-bgm" src="[diINnQEGrY4].mp3" loop></audio>
+    <audio id="eat-sound" src="eat_sound.mp3"></audio>
+
+<script>
+    let helpPageIndex = 1; 
+    let isBgmPlaying = false; 
+
+    function playClickSound() {
+        const clickSound = document.getElementById('click-sound'); 
+        if (clickSound) {
+            clickSound.currentTime = 0; 
+            clickSound.play().catch(e => console.log('클릭 소리 재생 실패:', e));
+        }
+    }
+    
+    function setupHoverEffect(buttonElement) {
+        const imageElement = buttonElement.querySelector('img');
+        if (!imageElement) return;
+        
+        if (buttonElement.id === 'bgm-button') return; 
+        
+        imageElement.addEventListener('mouseover', () => { 
+            imageElement.src = imageElement.dataset.hover || imageElement.dataset.normal; 
+        });
+        imageElement.addEventListener('mouseout', () => { imageElement.src = imageElement.dataset.normal; });
+    }
+
+    function setHelpPage(index) {
+        const totalPages = 3; 
+        
+        if (index < 1) { index = 1; alert('첫 페이지입니다!'); }
+        if (index > totalPages) { index = totalPages; alert('마지막 페이지입니다!'); }
+        
+        helpPageIndex = index;
+        
+        document.querySelectorAll('.help-page').forEach(page => { page.style.opacity = 0; });
+        document.getElementById(`help-img-${index}`).style.opacity = 1;
+        
+        document.getElementById('help-next-button').style.display = (index < totalPages) ? 'block' : 'none';
+        document.getElementById('help-prev-button').style.display = (index > 1) ? 'block' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const mainScreen = document.getElementById('main-screen');
+        const helpOverlay = document.getElementById('help-overlay');
+        const mainCharacter = document.getElementById('main-character-img');
+        const mainCharacterBubble = document.getElementById('main-character-bubble');
+        const gameBgm = document.getElementById('game-bgm');
+        const bgmButton = document.getElementById('bgm-button');
+        
+        const startBtn = document.getElementById('start-button');
+        const helpBtn = document.getElementById('help-button');
+        const nextBtn = document.getElementById('help-next-button');
+        const prevBtn = document.getElementById('help-prev-button');
+        const backBtn = document.getElementById('help-back-button');
+
+        // 1. 스프링 튀어오르는 효과 (즉시 발동)
+        setTimeout(() => { mainCharacter.style.bottom = '-12%'; }, 100); 
+        
+        // 2. 호버 효과 연결
+        setupHoverEffect(startBtn); setupHoverEffect(helpBtn);
+        setupHoverEffect(nextBtn); setupHoverEffect(prevBtn); setupHoverEffect(backBtn);
+        
+        // 3. 인물 호버 시 말풍선
+        mainCharacter.addEventListener('mouseover', () => { mainCharacterBubble.style.opacity = 1; });
+        mainCharacter.addEventListener('mouseout', () => { mainCharacterBubble.style.opacity = 0; });
+        
+        // 4. 🚨 BGM 버튼 로직 (클릭만으로 이미지 토글) 🚨
+        bgmButton.addEventListener('click', () => { 
+            
+            playClickSound(); // 클릭 소리 재생
+            const bgmIcon = document.getElementById('bgm-icon');
+            
+            const offSrc = bgmIcon.dataset.off;
+            const normalSrc = bgmIcon.dataset.normal;
+
+            if (isBgmPlaying) { 
+                gameBgm.pause(); isBgmPlaying = false; 
+                if (offSrc) bgmIcon.src = offSrc; 
+            } else { 
+                gameBgm.currentTime = 3; 
+                gameBgm.play().catch(e => console.log('BGM 재생 실패:', e)); 
+                isBgmPlaying = true;
+                if (normalSrc) bgmIcon.src = normalSrc; 
+            }
+        });
+        
+        // 5. 화면 전환 로직
+        startBtn.addEventListener('click', () => {
+            playClickSound(); 
+            console.log("게임 시작 화면으로 전환: game.html로 이동");
+           
+           // 소리가 재생될 시간을 잠시 확보한 후 페이지 이동 (0.1초 후)
+            setTimeout(() => {
+                // 🚨 2. 페이지 이동 🚨
+                window.location.href = 'game.html'; 
+            }, 100); // 100ms 지연
+        });
+        
+        // 6. 🚨 게임 방법 버튼 클릭 로직 🚨
+        helpBtn.addEventListener('click', () => {
+            playClickSound(); 
+            mainScreen.style.display = 'none'; 
+            helpOverlay.style.display = 'flex'; 
+            
+            const helpBox = document.getElementById('help-box');
+            helpBox.style.top = '43%'; // 스프링 효과 발동
+            
+            setTimeout(() => { setHelpPage(1); }, 700);
+        });
+        
+        // 7. 도움말 페이지 이동 버튼
+        nextBtn.addEventListener('click', () => { playClickSound(); setHelpPage(helpPageIndex + 1); });
+        prevBtn.addEventListener('click', () => { playClickSound(); setHelpPage(helpPageIndex - 1); });
+        
+        // 8. 되돌아가기 버튼 최종 로직
+        backBtn.addEventListener('click', () => {
+            playClickSound(); 
+            const helpBox = document.getElementById('help-box');
+
+            helpBox.style.top = '-100%'; // 설명 박스를 화면 밖으로 숨김
+            
+            setTimeout(() => {
+                helpOverlay.style.display = 'none';
+                mainScreen.style.display = 'block';
+            }, 700);
+        });
+    });
+</script>
+</body>
+</html>
