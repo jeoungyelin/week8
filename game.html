@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프레첼 먹기 게임 (교수님 몰래 프레첼)</title>
+    
+    <style>
+        /* A. 전체 초기 설정 및 컨테이너 */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            font-family: 'Do Hyeon', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #game-container {
+            width: 100vw; /* 뷰포트 너비 */
+            height: 100vh; /* 뷰포트 높이 */
+            position: relative;
+        }
+
+        #classroom-background {
+            width: 100%; height: 100%;
+            top: 0%; left: 0%;
+            background-image: url('Frame 2087326990.png'); 
+            
+            background-size: 100% auto;
+            background-repeat: no-repeat;
+            
+            background-position: center bottom -50px;
+            position: absolute;
+        }
+
+        /* ------------------------------------- */
+        /* B. 인물 및 동적 요소 스타일 (변경 없음) */
+        /* ------------------------------------- */
+
+        /* 교수님 영역 */
+        #professor-area { 
+            position: relative; 
+            top: 10px;
+            right: 450px;
+            width: 100%; /* 교수님과 말풍선이 들어갈 영역 */
+            height: 100%;
+            z-index: ;
+        }
+
+        #surveillance-video {
+            position: fixed;
+            top: -128px;
+            left: 234px;
+            width: 75.5%; /* 부모(#professor-area)를 꽉 채웁니다. */
+            height: 75.5%;
+            object-fit: contain; /* 비율 유지하며 영역 채우기 */
+            z-index: 901; /* 🚨 교수님 이미지(z-index 기본값) 위에 배치합니다. 🚨 */
+        }        
+
+        /* 교수님 이미지 */
+        #professor-img {
+            width: 60%; height: 60%;
+            top: 0px;
+            left: 370px;
+            background-image: url('image 110497.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            position: fixed;
+            z-index: 898; /* 🚨 비디오보다 낮게 🚨 */
+        }
+        /* 플레이어 이미지 */
+        #player-img {
+            width: 400px; height: 480px;
+            background-image: url('back student.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: absolute;
+            bottom: 40px; left: 37%;
+            z-index: 903;
+        }
+
+        /* 말풍선 이미지 (공격) */
+        #professor-bubble {
+            width: 400px; height: 200px;
+             left: 200px; top: 50px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: absolute;
+            transform-origin: center;
+            will-change: transform;
+            z-index: 910;
+        }
+
+        .professor-bubble {
+          transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .professor-bubble.bubble-hit {
+          transform: scale(1.5) rotate(15deg);
+          opacity: 0;
+        }
+        .player-hit {
+          animation: shake 0.3s ease;
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-10px); }
+          75% { transform: translateX(10px); }
+        }
+
+
+        /* ------------------------------------- */
+        /* 🚨 D. 스테이터스 창 관련 CSS (Flexbox 재배치 - 변경 없음) 🚨 */
+        /* ------------------------------------- */
+
+        /* 🚨 스테이터스 바 전체 컨테이너 (Flexbox 기준) */
+        #status-bar-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 905;
+            pointer-events: none;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        /* 하단 래퍼 */
+        #bottom-status-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        /* 1. 시간 창 이미지 */
+        #time-status-box {
+            width: 300px; height: 160px;
+            background-image: url('Group 2085666292.png'); 
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        /* 🚨 D-0. 타이머 바의 부모 컨테이너 스타일 🚨 */
+        #status-timer {
+            position: absolute; /* #time-status-box를 기준으로 위치 설정 */
+            width: 262px; /* 타이머 바가 들어갈 영역 (시간 창 크기에 맞춰 조정) */
+            height: 40px;
+            top: 66px; /* 시간 창 이미지 내부의 시작 위치 조정 */
+            left: 18px;
+            overflow: hidden; /* 타이머 바가 넘치는 것을 방지 */
+            /* z-index: 40; */ /* 필요에 따라 z-index 설정 */
+        }
+
+        #timer-bar {
+            position: absolute;
+            width: 100%; /* 🚨 시작 시 100%로 가득 차게 설정 🚨 */
+            height: 100%;
+            top: 0; 
+            left: 0; 
+            
+            border-radius: 5px; 
+            box-sizing: border-box;
+            
+            background: linear-gradient(to right, 
+                #FF00BB,     
+                #FFCFF2     
+            );
+            
+            transition: width 0.9s linear; /* 🚨 JavaScript로 90초 동안 줄어드는 과정을 자연스럽게 만듭니다. 🚨 */
+        }
+
+        /* 🚨 새로 추가: 하단 좌측 스테이터스 그룹을 수평으로 배열 */
+        #left-status-group {
+            display: flex;
+            justify-content: flex-start; /* ✅ 자동 정렬 */
+            align-items: flex-end;
+            width: 100%;
+        }
+
+        /* 2. 프레첼 획득 창 */
+        #pretzel-status-box {
+            position: fixed;
+            width: 400px; height: 160px;
+            bottom: 40px; right: -145px;
+            background-image: url('Group 2085666330 (1).png'); 
+            background-size: contain;
+            background-repeat: no-repeat;
+            display: flex; align-items: center; justify-content: flex-end;
+            padding-right: 10px;
+            z-index: 998;
+        }
+
+        /* 프레첼 아이콘 및 카운트 */
+        #pretzel-icon {
+            width: 130px; height: 130px;
+            background-image: url('kingzzang__htt-32.png'); 
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: absolute; left: 5px;
+            top: 66%; transform: translateY(-50%);
+        }
+        #pretzel-count-display {
+            font-size: 55px; color: #935300;
+            font-weight: bold;
+
+            text-shadow: 
+                -5px -5px 3px #FFFFFF,  /* 좌상단 */
+                 5px -5px 3px #FFFFFF,  /* 우상단 */
+                -5px 5px 3px #FFFFFF,   /* 좌하단 */
+                 5px 5px 3px #FFFFFF,   /* 우하단 */
+
+                 -2px 1px 15px rgba(0, 0, 0, 0.6); /* 5. 그림자 효과 */
+
+            position: fixed; right: 72px;
+            bottom: 3%; transform: translateY(-50%);
+            z-index: 10000;
+        }
+
+        /* 3. 경고 시스템 */
+        #warning-system {
+            position: fixed;     /* ✅ 고정 */
+            bottom: 0;
+            left: -15px;
+            width: 100%;
+            height: 240px;
+            pointer-events: none; /* 클릭 방지 */
+            z-index: 9999;
+        }
+
+        /* 경고창 이미지 */
+        #warning-message-box {
+            width: 400px; height: 160px;
+            background-image: url('Group 2085666290.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: absolute; 
+            bottom: 40px;
+            left: 40px;
+        }
+
+        /* 경고 카드 영역 */
+        #warning-card-area {
+            position: absolute;
+            bottom: 50px;          /* 경고창 바로 위로 띄움 */
+            left: 54px;             /* 화면 왼쪽 여백 */
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        /* 경고 카드 이미지 */
+        .warning-card {
+          position: relative;  
+          width: 70px;
+          height: 90px;
+          bottom: 0;
+          left: 0;
+          opacity: 0;
+          background-image: url('Group 2085666255.png');
+          background-size: contain;
+          background-repeat: no-repeat;
+          transform: scale(0.8);
+          transition: all 0.3s ease;
+        }
+
+        .warning-card.active {
+            opacity: 1;
+            transform: scale(1.1) rotate(-3deg);
+        }
+
+
+        /* ------------------------------------- */
+        /* F. 컬러 오버레이 스타일 (시야각 효과) */
+        /* ------------------------------------- */
+
+        #color-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* 원하는 색상과 투명도: 보라색 30% 투명 */
+            background-color: rgba(189, 0, 198, 1); 
+
+            mix-blend-mode: overlay;
+            
+            z-index: 904; 
+            
+            pointer-events: none; /* 클릭 이벤트 통과 */
+        }
+
+        /* 유틸리티 클래스 */
+        .hidden { display: none !important; }
+    </style>
+</head>
+
+    <body>
+      <div id="game-container">
+          
+          <div id="classroom-background">
+              
+              <div id="professor-area">
+                  <div id="professor-img"></div>
+                  <div id="professor-bubble" class="hidden"></div>
+
+                  <video id="surveillance-video" loop muted playsinline style="display: none;">
+                      <source src="profes video.mp4" type="video/mp4">
+                      Your browser does not support the video tag.
+                  </video>
+              </div>
+              
+              <div id="player-img"></div>
+          <div id="color-overlay" class="hidden"></div>
+          <div id="status-bar-container">
+              
+              <div id="time-status-box">
+                  <div id="status-timer">
+                      <div id="timer-bar"></div>
+                  </div>  
+              </div>  
+              
+              <div id="bottom-status-wrapper">
+                  <div id="left-status-group">
+                      <div id="pretzel-status-box">
+                          <div id="pretzel-count-display"></div>
+                          <div id="pretzel-icon"></div>
+                      </div>
+                  </div>
+              </div>
+          </div> 
+      </div>
+
+      <!-- 🚨 독립된 경고 시스템 (다른 레이아웃에 영향 X) -->
+      <div id="warning-system">
+          <div id="warning-message-box"></div>
+          <div id="warning-card-area">
+              <div class="warning-card" id="card-1"></div>
+              <div class="warning-card" id="card-2"></div>
+              <div class="warning-card" id="card-3"></div>
+          </div>
+      </div>
+
+        <audio id="click-sound" src="eat-323883.mp3"></audio>
+        <audio id="game-bgm" src="main bgm.mp3" loop></audio>
+
+        <audio id="surveillance-alert-sound" src="horror-orchestra-warning-338415.mp3"></audio>
+        <audio id="pop-sound" src="ow-sound-38502.mp3"></audio>
+
+    <script>
+    // 🚨 BGM 및 클릭 함수는 DOMContentLoaded 외부 유지 🚨
+    let isBgmStarted = false;
+    let surveillanceTimerId; 
+
+    function startGameBGM() {
+        const gameBgm = document.getElementById('game-bgm');
+        if (!isBgmStarted && gameBgm) {
+            gameBgm.volume = 0.5;
+            gameBgm.play().then(() => {
+                isBgmStarted = true;
+                console.log("BGM 재생 시작!");
+            }).catch(e => {
+                console.error("BGM 재생 실패:", e);
+            });
+        }
+    }
+
+    function playClickSound() {
+        const clickSound = document.getElementById('click-sound');
+        if (clickSound) {
+            clickSound.currentTime = 0;
+            clickSound.volume = 1.0;
+            clickSound.play().catch(e => console.error('소리 재생 실패:', e));
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("게임 로직 스크립트 로드 완료.");
+        
+        const gameBgm = document.getElementById('game-bgm');
+        const player = document.getElementById('player-img');
+        const professorBubble = document.getElementById('professor-bubble');
+        const surveillanceMode = document.getElementById('surveillance-mode');
+        
+        const BUBBLE_IMAGES = [
+            'wrong.png',
+            'what.png',
+            'bobo.png',
+            'gae.png',
+            'ram.png'
+        ];
+        
+        let bubbleTimerId; 
+        let isSurveilling = false;
+
+        const pretzelCountDisplay = document.getElementById('pretzel-count-display');
+        const warningCards = document.querySelectorAll('.warning-card');
+        
+        /* 🚨 게임 오버 공통 처리 함수 추가 */
+        function triggerGameOver(reason) {
+          console.log(`💀 게임 오버 발생: ${reason}`);
+          const bgm = document.getElementById("game-bgm");
+          if (bgm) bgm.pause();
+          setTimeout(() => {
+            window.location.href = "gameover.html"; // ✅ 게임오버 페이지로 이동
+          }, 800);
+        }
+
+        function giveWarning() {
+          if (currentWarningCount < warningCards.length) {
+            const warningSound = document.getElementById("warning-sound");
+            if (warningSound) {
+              warningSound.currentTime = 0;
+              warningSound.volume = 1.0;
+              warningSound.play().catch((e) => console.error("⚠️ 경고음 재생 실패:", e));
+            }
+
+            const card = warningCards[currentWarningCount];
+            if (card) {
+              card.classList.add("active");
+              card.style.opacity = '1';
+              card.style.transform = 'scale(1)';
+            }
+
+            currentWarningCount++;
+
+            const warningBox = document.getElementById("warning-message-box");
+            document.body.classList.add("warning-flash");
+            if (warningBox) warningBox.classList.add("shake-warning");
+
+            setTimeout(() => {
+              document.body.classList.remove("warning-flash");
+              if (warningBox) warningBox.classList.remove("shake-warning");
+            }, 600);
+
+            if (currentWarningCount === warningCards.length) {
+              triggerGameOver("경고 3회 누적");
+            }
+          }
+        }
+
+        const timerBar = document.getElementById('timer-bar');
+        const totalTime = 90;
+        let currentTime = totalTime;
+        const updateInterval = 1000;
+        
+        let playerX = 37;
+        const moveSpeed = 2;
+        const minX = 0;
+        const maxX = 70;
+        
+        let currentPretzelCount = 0;
+        let currentWarningCount = 0;
+        const WIN_GOAL = 30;
+
+        const professorVideo = document.getElementById('surveillance-video');
+        const colorOverlay = document.getElementById('color-overlay');
+        const surveillanceAlertSound = document.getElementById('surveillance-alert-sound');
+
+        let movementLocked = false;
+        let savedMoveSpeed = moveSpeed;
+        
+        pretzelCountDisplay.textContent = currentPretzelCount;
+        
+        function scheduleNextSurveillance() {
+            const baseDelay = 5000; 
+            const randomDelay = Math.random() * 1000;
+            const totalDelay = baseDelay + randomDelay;
+            
+            surveillanceTimerId = setTimeout(() => { 
+                toggleSurveillanceMode(true);
+            }, totalDelay);
+            
+            console.log(`다음 감시 모드는 ${Math.round(totalDelay / 1000)}초 후에 시작됩니다.`);
+        }
+        
+        // 🚨 랜덤 말풍선 생성 + 플레이어 쪽으로 다가오기 시스템 🚨
+        function scheduleNextBubbleThrow() {
+          if (isSurveilling || checkGameWin()) return;
+
+          const delay = Math.random() * 700 + 500;
+
+          setTimeout(() => {
+            const bubbleCount = Math.floor(Math.random() * 2) + 2;
+            for (let i = 0; i < bubbleCount; i++) {
+              setTimeout(() => {
+                createFlyingBubble(true);
+              }, i * 300);
+            }
+            scheduleNextBubbleThrow();
+          }, delay);
+        }
+
+        // 🚨 위에서 아래로 떨어지는 말풍선 생성 함수 🚨
+        function createFlyingBubble() {
+          if (isSurveilling) return;
+
+          const bubble = document.createElement("div");
+          bubble.classList.add("professor-bubble");
+          bubble.style.width = "240px";
+          bubble.style.height = "130px";
+          bubble.style.backgroundImage = `url('${
+            BUBBLE_IMAGES[Math.floor(Math.random() * BUBBLE_IMAGES.length)]
+          }')`;
+          bubble.style.backgroundSize = "contain";
+          bubble.style.backgroundRepeat = "no-repeat";
+          bubble.style.position = "absolute";
+          bubble.style.zIndex = 910;
+
+          const container = document.getElementById("game-container");
+          const containerRect = container.getBoundingClientRect();
+
+          const startX = Math.random() * (containerRect.width - 200);
+          const startY = -150;
+          bubble.style.left = `${startX}px`;
+          bubble.style.top = `${startY}px`;
+          container.appendChild(bubble);
+
+          const targetY = containerRect.height + 100 + Math.random() * 200;
+          const dx = (Math.random() - 0.5) * 500;
+          const dy = targetY - startY;
+
+          const duration = Math.random() * 6000 + 3000;
+
+          bubble.animate(
+            [
+              { transform: "translate(0, 0)", opacity: 1 },
+              { transform: `translate(${dx}px, ${dy}px) scale(0.8)`, opacity: 0.9 }
+            ],
+            { duration: duration, easing: "linear", fill: "forwards" }
+          );
+
+          const collisionCheck = setInterval(() => {
+            const p = player.getBoundingClientRect();
+            const b = bubble.getBoundingClientRect();
+
+            const horizontalOverlap = b.left < p.right - 150 && b.right > p.left + 150;
+            const verticalOverlap = b.bottom > p.top + 150 && b.top < p.bottom - 150;
+            const overlap = horizontalOverlap && verticalOverlap;
+
+            if (overlap) {
+              console.warn("💥 충돌 발생!");
+              giveWarning();
+
+              const popSound = document.getElementById("pop-sound");
+              if (popSound) {
+                  popSound.currentTime = 0;
+                  popSound.volume = 0.9;
+                  popSound.play().catch(e => console.error("팡 소리 재생 실패:", e));
+                }
+                
+                bubble.style.transition = "transform 0.3s ease, opacity 0.3s ease";
+                bubble.style.transform = "scale(1.6) rotate(20deg)";
+                bubble.style.opacity = "0";
+
+                player.classList.add("player-hit");
+                setTimeout(() => player.classList.remove("player-hit"), 300);
+
+                setTimeout(() => bubble.remove(), 300);
+                clearInterval(collisionCheck);
+              }
+            }, 50);
+
+          setTimeout(() => {
+            clearInterval(collisionCheck);
+            bubble.remove();
+          }, duration + 200);
+        }
+        
+        function throwBubble() {
+            if (isSurveilling || movementLocked || checkGameWin()) {
+                scheduleNextBubbleThrow();
+                return; 
+            }
+            
+            professorBubble.classList.remove('hidden');
+            const randomIndex = Math.floor(Math.random() * BUBBLE_IMAGES.length);
+            professorBubble.style.backgroundImage = `url('${BUBBLE_IMAGES[randomIndex]}')`;
+
+            professorBubble.style.animation = 'none';
+            professorBubble.style.removeProperty('transform');
+            void professorBubble.offsetWidth; 
+            
+            professorBubble.classList.add('bubble-throwing');
+            console.log(`교수님이 말풍선(${BUBBLE_IMAGES[randomIndex]})을 던졌습니다!`);
+        }
+
+        function toggleSurveillanceMode(isStarting) {
+            const duration = 4000;
+
+            if (isStarting) {
+                isSurveilling = true;
+                document.querySelectorAll('.professor-bubble').forEach(b => b.remove());
+                clearTimeout(bubbleTimerId);
+                movementLocked = true;
+                
+                if (professorVideo) {
+                    professorVideo.style.display = 'block';
+                    professorVideo.currentTime = 0;
+                    professorVideo.play().catch(e => console.error("비디오 재생 오류:", e));
+                }
+
+                if (colorOverlay) colorOverlay.classList.remove('hidden');
+                if (surveillanceAlertSound) {
+                    surveillanceAlertSound.currentTime = 0;
+                    surveillanceAlertSound.volume = 1.0;
+                    surveillanceAlertSound.play().catch(e => console.error("효과음 재생 오류:", e));
+                }
+                
+                setTimeout(() => toggleSurveillanceMode(false), duration);
+
+            } else {
+                isSurveilling = false;
+                if (professorVideo) {
+                    professorVideo.pause();
+                    professorVideo.style.display = 'none';
+                }
+                if (colorOverlay) colorOverlay.classList.add('hidden');
+
+                setTimeout(() => {
+                    movementLocked = false; 
+                    console.log("감시 모드 종료. 입력 활성화.");
+                    scheduleNextSurveillance(); 
+                    scheduleNextBubbleThrow(); 
+                }, 500);
+            }
+        }
+        
+        scheduleNextSurveillance(); 
+        scheduleNextBubbleThrow(); 
+        
+        document.addEventListener('keydown', (event) => {
+            startGameBGM(); 
+            
+            if (movementLocked || isSurveilling) {
+                console.log("🚨 감시 중 이동 감지! 게임 오버!");
+                triggerGameOver("감시 중 이동");
+                event.preventDefault(); 
+                return;
+            }
+            
+            let isMoved = false;
+
+            if (event.key === 'ArrowLeft') {
+                playerX -= moveSpeed;
+                isMoved = true;
+            } else if (event.key === 'ArrowRight') {
+                playerX += moveSpeed;
+                isMoved = true;
+            }
+
+            if (isMoved) {
+                if (playerX < minX) playerX = minX;
+                else if (playerX > maxX) playerX = maxX;
+                player.style.left = playerX + '%';
+            }
+        });
+
+        /* ✅ 해피엔딩 이동 조건 추가 */
+        function checkGameWin() {
+            if (currentPretzelCount >= WIN_GOAL) {
+                console.log("🎉 프레첼 30개 달성! 해피엔딩으로 이동!");
+                clearInterval(timerInterval);
+                clearTimeout(surveillanceTimerId);
+                clearTimeout(bubbleTimerId);
+                player.removeEventListener('click', playerClickHandler);
+
+                // ✅ 해피엔딩 페이지로 이동
+                setTimeout(() => {
+                    window.location.href = "happyending.html";
+                }, 800);
+
+                return true;
+            }
+            return false;
+        }
+
+        function collectPretzel() {
+            if (checkGameWin()) return;
+            currentPretzelCount++;
+            pretzelCountDisplay.textContent = currentPretzelCount;
+            playClickSound();
+            console.log(`프레첼 획득! 현재 개수: ${currentPretzelCount}`);
+            checkGameWin();
+        }
+
+        const playerClickHandler = () => {
+            startGameBGM(); 
+            if (movementLocked) {
+                console.log("클릭 잠금됨: 감시 모드 중입니다.");
+                return;
+            }
+            collectPretzel();
+        };
+
+        if (player) { 
+            player.addEventListener('click', playerClickHandler);
+        } else {
+             console.error("플레이어 요소(id='player-img')를 찾을 수 없어 클릭 이벤트 연결 실패.");
+        }
+
+        function updateTimerBar() {
+            if (!timerBar) {
+                console.error("타이머 바 요소(id='timer-bar')를 찾을 수 없습니다.");
+                clearInterval(timerInterval);
+                return;
+            }
+
+            if (currentTime > 0) {
+                currentTime--;
+                const widthPercentage = (currentTime / totalTime) * 100;
+                timerBar.style.width = widthPercentage + '%';
+            } else {
+                clearInterval(timerInterval); 
+                if (currentPretzelCount < WIN_GOAL) {
+                  triggerGameOver("시간 초과 - 목표 미달");
+                }
+            }
+        }
+
+        const timerInterval = setInterval(updateTimerBar, updateInterval); 
+    });
+</script>
+</body>
+</html>
