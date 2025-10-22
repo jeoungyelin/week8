@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>게임 클리어</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* 배경 이미지 */
+  #ending-bg {
+    position: fixed;
+    inset: 0;
+    background-image: url('Frame 2087326990.png'); /* ✅ 기존 교실 배경 이미지 */
+    background-size: cover;
+    background-position: center bottom;
+    z-index: 1;
+  }
+
+  /* 게임 클리어 이미지 */
+  #gameclear-img {
+    position: absolute;
+    top: -9%;
+    left: 10%;
+    transform: translateX(-50%);
+    width: 1400px; /* ✅ 필요시 직접 조정 */
+    height: 1000px;
+    background-image: url('dlksafjlksdjfkl.png'); /* ✅ 게임 클리어 이미지 파일명 */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 5;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards 0.3s;
+  }
+
+  /* 다시하기 버튼 */
+  #retry-button {
+    position: absolute;
+    bottom: 6%;
+    left: 45%;
+    transform: translateX(-50%);
+    width: 230px; /* ✅ 직접 수정 가능 */
+    height: 90px; /* ✅ 직접 수정 가능 */
+    background-image: url('Group 2085666280.png'); /* 기본 버튼 */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 6;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards 1.5s;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+
+  /* hover 시 이미지 교체 */
+  #retry-button:hover {
+    background-image: url('1234235.png'); /* ✅ hover 이미지 */
+    transform: translateX(-50%) scale(1.05);
+  }
+
+  /* 부드러운 등장 효과 */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+  <div id="ending-bg"></div>
+  <div id="gameclear-img"></div>
+  <div id="retry-button"></div>
+
+  <audio id="ending-bgm" src="Miniskirt (inst) (Instrumental) (1).mp3" autoplay loop></audio>
+
+<script>
+  window.addEventListener('load', () => {
+    // 이미 로드된 뒤에 표시되도록 안전하게
+    document.getElementById('gameclear-img').style.opacity = '1';
+  });
+
+  document.getElementById('retry-button').addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+</script>
+
+</body>
+</html>
